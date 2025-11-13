@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Whiteboard App</title>
+  <style>
+    .color-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-right: 10px;
+}
+
+.color-row {
+  display: flex;
+  gap: 4px;
+}
+
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.color-swatch:hover {
+  transform: scale(1.2);
+  border-color: #333;
+}
+
+    body, html {
+      margin: 0; padding: 0; overflow: hidden;
+      background: #ffffff; font-family: sans-serif;
+    }
+    #toolbar {
+      position: fixed; top: 10px; left: 10px; z-index: 10;
+      background: white; padding: 8px 12px;
+      border-radius: 10px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      display: flex; gap: 10px; align-items: center;
+    }
+    #topRightButtons {
+      position: fixed; top: 10px; right: 10px; z-index: 10;
+      display: flex; gap: 10px;
+    }
+    button {
+      background: #007bff; color: white;
+      border: none; padding: 8px 12px;
+      border-radius: 6px; cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover { background: #0056b3; }
+    #canvas { display: block; cursor: crosshair; }
+
+    
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+    }
+    .modal-content {
+      background: white;
+      margin: 5% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 60%;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      position: relative;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    .close {
+      position: absolute; top: 10px; right: 15px;
+      font-size: 22px; cursor: pointer;
+    }
+    iframe {
+      width: 100%; height: 315px;
+      border: none; border-radius: 8px;
+    }
+    .dev-container {
+      display: flex; gap: 40px; justify-content: center; flex-wrap: wrap;
+      margin-top: 20px;
+    }
+    .dev-member {
+      text-align: center;
+      font-size: 16px;
+    }
+    .dev-member img {
+      width: 130px; height: 130px;
+      border-radius: 50%; object-fit: cover;
+      border: 2px solid #007bff;
+    }
+    .dev-member p { margin: 6px 0; }
+    
+body.dark {
+  background: #121212;
+  color: #ffffff;
+}
+
+body.dark #toolbar {
+  background: #1e1e1e;
+  box-shadow: 0 0 8px rgba(255,255,255,0.1);
+}
+
+body.dark #topRightButtons button,
+body.dark #toolbar button {
+  background: #333333;
+  color: #f0f0f0;
+}
+
+body.dark #topRightButtons button:hover,
+body.dark #toolbar button:hover {
+  background: #555555;
+}
+
+body.dark .modal-content {
+  background: #1f1f1f;
+  color: #ffffff;
+}
+
+body.dark .color-swatch {
+  border: 1px solid #777;
+}
+
+  </style>
+</head>
+<body>
+  <div id="toolbar">
+  <label>Color:</label>
+<div id="colorPalette" class="color-palette">
+  
+  <div class="color-row">
+    <div class="color-swatch" style="background:#000000" data-color="#000000"></div>
+    <div class="color-swatch" style="background:#1F497D" data-color="#1F497D"></div>
+    <div class="color-swatch" style="background:#4F81BD" data-color="#4F81BD"></div>
+    <div class="color-swatch" style="background:#C0504D" data-color="#C0504D"></div>
+    <div class="color-swatch" style="background:#9BBB59" data-color="#9BBB59"></div>
+    <div class="color-swatch" style="background:#8064A2" data-color="#8064A2"></div>
+    <div class="color-swatch" style="background:#4BACC6" data-color="#4BACC6"></div>
+    <div class="color-swatch" style="background:#F79646" data-color="#F79646"></div>
+  </div>
+
+  
+  <div class="color-row">
+    <div class="color-swatch" style="background:#FF0000" data-color="#FF0000"></div>
+    <div class="color-swatch" style="background:#FFFF00" data-color="#FFFF00"></div>
+    <div class="color-swatch" style="background:#00FF00" data-color="#00FF00"></div>
+    <div class="color-swatch" style="background:#00FFFF" data-color="#00FFFF"></div>
+    <div class="color-swatch" style="background:#0000FF" data-color="#0000FF"></div>
+    <div class="color-swatch" style="background:#FF00FF" data-color="#FF00FF"></div>
+    <div class="color-swatch" style="background:#808080" data-color="#808080"></div>
+    <div class="color-swatch" style="background:#FFFFFF" data-color="#FFFFFF"></div>
+  </div>
+</div>
+  <label>Size:</label>
+  <input type="range" id="sizePicker" min="1" max="20" value="3">
+  <button id="eraserBtn">Eraser</button>
+  <button id="clearBtn">Clear</button>
+  <button id="downloadBtn">Download</button>
+  <label>Shape:</label>
+<select id="shapePicker">
+  <option value="freehand">Freehand</option>
+  <option value="line">Line</option>
+  <option value="rectangle">Rectangle</option>
+  <option value="circle">Circle</option>
+  <option value="ellipse">Ellipse</option>
+  <option value="triangle">Triangle</option>
+  <option value="arrow">Arrow</option>
+  <option value="star">Star</option>
+</select>
+<label>Tool:</label>
+<select id="toolPicker">
+  <option value="pencil">Pencil</option>
+  <option value="brush">Brush</option>
+  <option value="marker">Marker</option>
+  <option value="highlighter">Highlighter</option>
+</select>
+
+
+</div>
+
+
+  <div id="topRightButtons">
+  <button id="learnBtn">Learn</button>
+  <button id="developedBtn">Developed by</button>
+  <button id="helpBtn">Help</button>
+  <button id="themeBtn">🌙 Dark Mode</button>
+  <button id="moveBtn">Move</button>
+
+</div>
+
+
+  <canvas id="canvas"></canvas>
+
+  
+  <div id="learnModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeLearn">&times;</span>
+      <h2>Learn: How This Project Was Built</h2>
+      <p>
+        This collaborative whiteboard was developed using <b>HTML Canvas</b> for drawing,
+        <b>JavaScript</b> for user interaction, <b>Socket.IO</b> for real-time communication,
+        and <b>Node.js with Express</b> as the backend server.
+      </p>
+      <p>
+        When you draw on the canvas, your mouse movements and drawing data are sent
+        to the backend server via Socket.IO. The server broadcasts this data to all connected
+        clients, ensuring every user sees updates in real time.
+      </p>
+      <h3>Watch the Tutorial:</h3>
+      <iframe src="https://www.youtube.com/embed/Br4uaXHrODg?start=404" allowfullscreen></iframe>
+    </div>
+  </div>
+
+  
+  <div id="developedModal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="closeDeveloped">&times;</span>
+    <h2>Developed By</h2>
+    <div class="dev-container">
+      <div class="dev-member">
+        <img src="Suryansh.jpeg" alt="Suryansh Mukherjee">
+        <p><b>Suryansh Mukherjee</b></p>
+        <p>Reg No: 24BCE5373</p>
+      </div>
+
+      <div class="dev-member">
+        <img src="Samyak.jpeg" alt="Samyak Srijan">
+        <p><b>Samyak Srijan</b></p>
+        <p>Reg No: 24BCE5396</p>
+      </div>
+    </div>
+
+    <hr style="margin: 25px 0; border: 0; border-top: 2px solid #007bff;">
+
+    <h3 style="text-align:center;">Guided By</h3>
+    <div class="dev-container" style="justify-content:center;">
+      <div class="dev-member">
+        <img src="assets/Sir.png" alt="Dr Swaminathan Annadurai">
+        <p><b>Dr. Swaminathan Annadurai</b></p>
+        <p>Professor, VIT University</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+
+
+  
+  <div id="helpModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeHelp">&times;</span>
+      <h2>Help: How to Use This Project</h2>
+      <ul>
+        <li>Click and drag on the canvas to draw.</li>
+        <li>Use the <b>Color</b> picker to select your preferred drawing color.</li>
+        <li>Adjust the <b>Size</b> slider to control brush thickness.</li>
+        <li>Click <b>Clear</b> to erase the board for everyone.</li>
+        <li>Open the app in multiple browsers or devices to collaborate in real-time.</li>
+        <li>Ensure the Node.js server is running on <b>localhost:8080</b>.</li>
+        <li>All connected users’ drawings sync instantly using Socket.IO.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.8.1/socket.io.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>
